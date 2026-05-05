@@ -341,7 +341,7 @@ function supportMsg() {
 
 Need help? Our team is available 24/7.
 
-📬 Contact: @YourSupportHandle
+📬 Contact: @Dave_211
 💬 Response time: Usually within 15 minutes
 
 _Please include your order details and transaction hash when reaching out._`;
