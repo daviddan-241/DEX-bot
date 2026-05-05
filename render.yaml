@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: dex-boosting-bot
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node bot.js
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: SOL_WALLET
+        value: AsSdLVZRX8BAdi5u4PGHefiAFdcsR8nRAaFBKpzhPtc2
+      - key: BNB_WALLET
+        value: bnb189gjjucwltdpnlemrveakf0q6xg0smfqdh6869
+      - key: ETH_WALLET
+        value: 0x589e85724Eb0d8Fc8C1e5A0b3B429483c91F90E3
+      - key: NODE_ENV
+        value: production
