@@ -879,20 +879,28 @@ bot.on('message', async (msg) => {
     if (text === '/start') {
       clearSession(chatId);
       await bot.sendMessage(chatId,
-        `🚀 WELCOME TO DEX BOOSTING BOT\n\n` +
-        `Your Professional Token Growth Partner\n\n` +
-        `We deliver premium token boosting services across the leading blockchain platforms:\n\n` +
-        `📊 DexScreener — Token profile updates, trending placement, and trading volume\n` +
-        `🔥 Pump.fun — Solana token growth and graduation acceleration\n` +
-        `🐸 Four.Meme — BSC community building and chart domination\n` +
-        `⚡ Flap.sh — BSC token growth and trending placement\n\n` +
-        `💡 How It Works:\n` +
-        `1. Select your platform\n` +
-        `2. Choose your service and tier\n` +
-        `3. Provide your token contract address\n` +
-        `4. Send payment in your preferred crypto\n` +
-        `5. Watch your token take off 🚀\n\n` +
-        `Select a platform to begin:`,
+        `👋 Welcome to the Multi-Platform Token Booster Bot!
+
+Ready to send your token to the moon? 🚀
+We provide industry-leading automated volume, holders, and Trending services across the top crypto platforms with unmatched reliability and speed.
+
+⚠️ IMPORTANT NOTICE:
+This bot is NOT a product of DexScreener. We are an independent service that connects directly to the DexScreener API to ensure your project's data remains accurate and top-performing at all times.
+
+✨ Why Choose Us?
+• Trusted by Professionals: We are a verified provider for top-tier crypto projects.
+• Direct API Integration: We use official channels to ensure 100% safety and performance.
+• 24/7 Premium Support: Our team is always here to help you scale your project.
+
+📈 Our Supported Platforms:
+📉 DexScreener – Maximize visibility with trending status and high-speed volume bots.
+🔥 Pump.fun – Supercharge your Solana launches with tailored volume & holders.
+🐸 Four.Meme – Dominate the BSC meme coin charts like a pro.
+⚡ Flap.sh – Automate your BSC project volume and trending status.
+
+💡 Whether you're stealth launching or scaling a massive Community Takeover (CTO), we have the premium tools you need to build unbreakable hype and investor trust.
+
+👇 Select a platform below to get started!`,
         { reply_markup: MAIN_KB }
       );
       return;
