@@ -2,12 +2,8 @@ require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 
-// Keep-alive HTTP server (required for Render + UptimeRobot)
 require('./server');
 
-// ─────────────────────────────────────────────
-//  CONFIG — fill these in before running
-// ─────────────────────────────────────────────
 const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
 
 const WALLETS = {
@@ -16,162 +12,170 @@ const WALLETS = {
   ETH: process.env.ETH_WALLET || '0x589e85724Eb0d8Fc8C1e5A0b3B429483c91F90E3',
 };
 
-const ADMIN_ID = process.env.ADMIN_ID || null; // optional: your Telegram user ID for order alerts
+const ADMIN_ID = process.env.ADMIN_ID || null;
 
-// ─────────────────────────────────────────────
-//  PRICING TABLE
-// ─────────────────────────────────────────────
+// PRICING — DexScreener in USD, others in native currency
 const SERVICES = {
   dexscreener: {
-    label: '📊 DexScreener',
-    chain: 'Multi-chain',
-    currency: 'ETH/BNB/SOL',
+    label: 'DexScreener',
+    emoji: '📊',
+    payChains: ['ETH', 'BNB', 'SOL'],
+    usdPriced: true,
     services: {
       update: {
-        label: '🔄 DexScreener Update',
-        description: 'Update your Token Info, Logo, Banner, and Socials',
+        label: 'DexScreener Update',
+        description: 'Update token profile on DexScreener — logo, name, banner, website, and all social links. Professional profiles attract traders and investors immediately.',
         tiers: [
-          { id: 'basic', label: 'Basic Update', desc: 'Logo + Name + Socials', price: 0.05, currency: 'ETH' },
-          { id: 'premium', label: 'Premium Update', desc: 'Full profile with banner', price: 0.1, currency: 'ETH' },
+          { id: 'basic', label: 'Basic Update', priceUSD: 50, delivery: '24 hours', includes: ['Logo upload', 'Name update', 'Website link', 'Twitter + Telegram'] },
+          { id: 'premium', label: 'Premium Update', priceUSD: 120, delivery: '6-12 hours', includes: ['Full Basic + Banner', 'Description', 'Discord link', 'Priority'] },
         ],
         requiresChain: true,
       },
       trending: {
-        label: '🔥 DexScreener Trending',
-        description: 'Get your token trending on DexScreener',
+        label: 'DexScreener Trending',
+        description: 'Place your token in DexScreener trending — seen by thousands of traders daily. Volume-based algorithm push for sustained visibility.',
         tiers: [
-          { id: 'bronze', label: 'Bronze Trend', desc: '6-hour trending push', price: 0.2, currency: 'ETH' },
-          { id: 'silver', label: 'Silver Trend', desc: '12-hour trending push', price: 0.35, currency: 'ETH' },
-          { id: 'gold', label: 'Gold Trend', desc: '24-hour trending push', price: 0.6, currency: 'ETH' },
+          { id: 'bronze', label: 'Bronze (6hr)', priceUSD: 150, delivery: '30 min', includes: ['6-hour trending', 'Volume push', 'Real wallets'] },
+          { id: 'silver', label: 'Silver (12hr)', priceUSD: 280, delivery: '30 min', includes: ['12-hour trending', 'Stronger push', 'Holder increase'] },
+          { id: 'gold', label: 'Gold (24hr)', priceUSD: 500, delivery: '30 min', includes: ['24-hour trending', 'Max volume', 'Large holders', 'Priority'] },
         ],
         requiresChain: true,
       },
       volume: {
-        label: '📈 DexScreener Volume',
-        description: 'Boost your trading volume on DexScreener',
+        label: 'DexScreener Volume',
+        description: 'Boost trading volume using real wallet activity. High volume signals legitimacy and pushes tokens into volume leaderboards.',
         tiers: [
-          { id: 'basic', label: 'Basic Volume', desc: 'Light volume boost', price: 0.1, currency: 'ETH' },
-          { id: 'medium', label: 'Medium Volume', desc: 'Moderate volume boost', price: 0.2, currency: 'ETH' },
-          { id: 'heavy', label: 'Heavy Volume', desc: 'Maximum volume boost', price: 0.4, currency: 'ETH' },
+          { id: 'basic', label: 'Basic Volume', priceUSD: 80, delivery: '1 hour', includes: ['Distributed wallets', 'Natural patterns', 'Volume rank boost'] },
+          { id: 'medium', label: 'Medium Volume', priceUSD: 180, delivery: '1 hour', includes: ['Higher frequency', 'Chart push', 'Leaderboard'] },
+          { id: 'heavy', label: 'Heavy Volume', priceUSD: 350, delivery: '1 hour', includes: ['Max frequency', 'Top charts', 'FOMO buying'] },
         ],
         requiresChain: true,
       },
       boost: {
-        label: '🚀 DexScreener Boost',
-        description: 'Maximize visibility with trending & volume combo',
+        label: 'DexScreener Boost',
+        description: 'Complete domination package — heavy volume PLUS trending placement combined. This is what serious projects use.',
         tiers: [
-          { id: 'starter', label: 'Starter Boost', desc: 'Volume + 6h trending', price: 0.3, currency: 'ETH' },
-          { id: 'pro', label: 'Pro Boost', desc: 'Heavy volume + 12h trending', price: 0.5, currency: 'ETH' },
-          { id: 'ultra', label: 'Ultra Boost', desc: 'Max volume + 24h trending', price: 0.9, currency: 'ETH' },
+          { id: 'starter', label: 'Starter Boost', priceUSD: 200, delivery: '30 min', includes: ['Basic volume + 6hr trending', 'Launch effect'] },
+          { id: 'pro', label: 'Pro Boost', priceUSD: 400, delivery: '30 min', includes: ['Heavy volume + 12hr trending', 'Holders + Priority'] },
+          { id: 'ultra', label: 'Ultra Boost', priceUSD: 750, delivery: '30 min', includes: ['Max volume + 24hr trending', 'VIP support + Report'] },
         ],
         requiresChain: true,
       },
     },
   },
+
   pumpfun: {
-    label: '🔥 Pump.fun',
-    chain: 'Solana',
-    currency: 'SOL',
+    label: 'Pump.fun',
+    emoji: '🔥',
+    payChains: ['SOL'],
+    usdPriced: false,
+    nativeCurrency: 'SOL',
     services: {
       boost: {
-        label: '🚀 Pump.fun Boost',
-        description: 'Boost your Pump.fun token with volume and holder activity',
+        label: 'Pump.fun Boost',
+        description: 'Boost Pump.fun token with volume and real holders on Solana. Higher holders + volume = higher trust and organic buying.',
         tiers: [
-          { id: 'basic', label: 'Basic Pump', desc: 'Light volume and holder increase', price: 0.5, currency: 'SOL' },
-          { id: 'medium', label: 'Medium Pump', desc: 'Moderate volume and holder boost', price: 1.0, currency: 'SOL' },
-          { id: 'mega', label: 'Mega Pump', desc: 'Heavy volume and maximum holder boost', price: 2.0, currency: 'SOL' },
+          { id: 'basic', label: 'Basic Pump', priceAmount: 0.5, delivery: '15 min', includes: ['20-40 holders', 'Light volume', 'Natural activity'] },
+          { id: 'medium', label: 'Medium Pump', priceAmount: 1.0, delivery: '15 min', includes: ['50-100 holders', 'Moderate volume', 'Trending push'] },
+          { id: 'mega', label: 'Mega Pump', priceAmount: 2.0, delivery: '15 min', includes: ['150-250 holders', 'Heavy volume', 'Front page', 'Priority'] },
         ],
       },
       trending: {
-        label: '📊 Pump.fun Trending',
-        description: 'Get your token trending on Pump.fun',
+        label: 'Pump.fun Trending',
+        description: 'Push token into Pump.fun trending section — the main discovery page for thousands of Solana degens hourly.',
         tiers: [
-          { id: 'basic', label: 'Trend Push', desc: 'Push to trending section', price: 1.5, currency: 'SOL' },
-          { id: 'premium', label: 'Top Trend', desc: 'Top trending placement', price: 3.0, currency: 'SOL' },
+          { id: 'basic', label: 'Trend Push', priceAmount: 1.5, delivery: '20 min', includes: ['4-6 hours trending', 'Algorithm push'] },
+          { id: 'premium', label: 'Top Trend', priceAmount: 3.0, delivery: '20 min', includes: ['Top 10 placement', '8-12 hours', 'Holders + Priority'] },
         ],
       },
       volume: {
-        label: '📈 Pump.fun Volume',
-        description: 'Supercharge your Pump.fun trading volume',
+        label: 'Pump.fun Volume',
+        description: 'Supercharge Pump.fun volume using distributed Solana wallets with natural trade patterns.',
         tiers: [
-          { id: 'basic', label: 'Basic Volume', desc: 'Light volume boost', price: 0.5, currency: 'SOL' },
-          { id: 'medium', label: 'Medium Volume', desc: 'Moderate volume boost', price: 1.0, currency: 'SOL' },
-          { id: 'heavy', label: 'Heavy Volume', desc: 'Maximum volume boost', price: 2.0, currency: 'SOL' },
+          { id: 'basic', label: 'Basic Volume', priceAmount: 0.5, delivery: '30 min', includes: ['Distributed wallets', 'Natural timing'] },
+          { id: 'medium', label: 'Medium Volume', priceAmount: 1.0, delivery: '30 min', includes: ['Higher frequency', 'Chart boost'] },
+          { id: 'heavy', label: 'Heavy Volume', priceAmount: 2.0, delivery: '30 min', includes: ['Max frequency', 'Top placement'] },
         ],
       },
       graduation: {
-        label: '🎓 Pump.fun Graduation',
-        description: 'Help your token reach graduation faster',
+        label: 'Pump.fun Graduation',
+        description: 'Fast-track graduation to Raydium. Strategic volume bursts to fill bonding curve faster and reach $69K cap.',
         tiers: [
-          { id: 'assist', label: 'Graduation Assist', desc: 'Moderate push towards graduation', price: 2.5, currency: 'SOL' },
-          { id: 'boost', label: 'Graduation Boost', desc: 'Strong push with volume burst', price: 4.0, currency: 'SOL' },
-          { id: 'express', label: 'Graduation Express', desc: 'Maximum graduation assistance', price: 6.0, currency: 'SOL' },
+          { id: 'assist', label: 'Graduation Assist', priceAmount: 2.5, delivery: '30 min', includes: ['40-60% push', 'Volume bursts', 'Monitoring'] },
+          { id: 'boost', label: 'Graduation Boost', priceAmount: 4.0, delivery: '30 min', includes: ['60-80% push', 'Heavy bursts', 'Support'] },
+          { id: 'express', label: 'Graduation Express', priceAmount: 6.0, delivery: '15 min', includes: ['Max push', 'Guaranteed attempt', 'VIP + Monitoring'] },
         ],
       },
     },
   },
+
   fourmeme: {
-    label: '🐸 Four.Meme',
-    chain: 'BSC',
-    currency: 'BNB',
+    label: 'Four.Meme',
+    emoji: '🐸',
+    payChains: ['BNB'],
+    usdPriced: false,
+    nativeCurrency: 'BNB',
     services: {
       boost: {
-        label: '🚀 Four.Meme Boost',
-        description: 'Boost your Four.Meme BSC token with volume and holder activity',
+        label: 'Four.Meme Boost',
+        description: 'Boost Four.Meme BSC token with volume and holders. Real BNB wallet activity gives instant social proof.',
         tiers: [
-          { id: 'basic', label: 'Basic Pump', desc: 'Light volume and holder increase', price: 0.3, currency: 'BNB' },
-          { id: 'medium', label: 'Medium Pump', desc: 'Moderate volume and holder boost', price: 0.6, currency: 'BNB' },
-          { id: 'mega', label: 'Mega Pump', desc: 'Heavy volume and maximum holder boost', price: 1.0, currency: 'BNB' },
+          { id: 'basic', label: 'Basic Pump', priceAmount: 0.3, delivery: '15 min', includes: ['15-30 holders', 'Light volume'] },
+          { id: 'medium', label: 'Medium Pump', priceAmount: 0.6, delivery: '15 min', includes: ['40-80 holders', 'Moderate volume', 'Chart push'] },
+          { id: 'mega', label: 'Mega Pump', priceAmount: 1.0, delivery: '15 min', includes: ['100-200 holders', 'Heavy volume', 'Front page'] },
         ],
       },
       trending: {
-        label: '📊 Four.Meme Trending',
-        description: 'Dominate the Four.Meme trending section',
+        label: 'Four.Meme Trending',
+        description: 'Get Four.Meme trending — the main discovery page on BSC with millions of active wallets.',
         tiers: [
-          { id: 'basic', label: 'Trend Push', desc: 'Push to trending section', price: 0.5, currency: 'BNB' },
-          { id: 'premium', label: 'Top Trend', desc: 'Top trending placement', price: 1.0, currency: 'BNB' },
+          { id: 'basic', label: 'Trend Push', priceAmount: 0.5, delivery: '20 min', includes: ['4-6 hours trending'] },
+          { id: 'premium', label: 'Top Trend', priceAmount: 1.0, delivery: '20 min', includes: ['Top 5 placement', '8-12 hours', 'Holders'] },
         ],
       },
       volume: {
-        label: '📈 Four.Meme Volume',
-        description: 'Automate your BSC project volume',
+        label: 'Four.Meme Volume',
+        description: 'Automate BSC volume with distributed BNB wallets. Randomized trades make your token appear actively traded.',
         tiers: [
-          { id: 'basic', label: 'Basic Volume', desc: 'Light volume boost', price: 0.3, currency: 'BNB' },
-          { id: 'medium', label: 'Medium Volume', desc: 'Moderate volume boost', price: 0.6, currency: 'BNB' },
-          { id: 'heavy', label: 'Heavy Volume', desc: 'Maximum volume boost', price: 1.0, currency: 'BNB' },
+          { id: 'basic', label: 'Basic Volume', priceAmount: 0.3, delivery: '30 min', includes: ['Distributed activity'] },
+          { id: 'medium', label: 'Medium Volume', priceAmount: 0.6, delivery: '30 min', includes: ['Higher frequency', 'Chart rank'] },
+          { id: 'heavy', label: 'Heavy Volume', priceAmount: 1.0, delivery: '30 min', includes: ['Max frequency', 'Top charts'] },
         ],
       },
     },
   },
+
   flapsh: {
-    label: '⚡ Flap.sh',
-    chain: 'BSC',
-    currency: 'BNB',
+    label: 'Flap.sh',
+    emoji: '⚡',
+    payChains: ['BNB'],
+    usdPriced: false,
+    nativeCurrency: 'BNB',
     services: {
       boost: {
-        label: '🚀 Flap.sh Boost',
-        description: 'Boost your Flap.sh BSC token with volume and holder activity',
+        label: 'Flap.sh Boost',
+        description: 'Boost Flap.sh BSC token with volume and holders. Early traction leads to organic discovery by BSC community.',
         tiers: [
-          { id: 'basic', label: 'Basic Pump', desc: 'Light volume and holder increase', price: 0.3, currency: 'BNB' },
-          { id: 'medium', label: 'Medium Pump', desc: 'Moderate volume and holder boost', price: 0.6, currency: 'BNB' },
-          { id: 'mega', label: 'Mega Pump', desc: 'Heavy volume and maximum holder boost', price: 1.0, currency: 'BNB' },
+          { id: 'basic', label: 'Basic Pump', priceAmount: 0.3, delivery: '15 min', includes: ['15-30 holders', 'Light volume'] },
+          { id: 'medium', label: 'Medium Pump', priceAmount: 0.6, delivery: '15 min', includes: ['40-80 holders', 'Moderate volume'] },
+          { id: 'mega', label: 'Mega Pump', priceAmount: 1.0, delivery: '15 min', includes: ['100-200 holders', 'Heavy volume'] },
         ],
       },
       trending: {
-        label: '📊 Flap.sh Trending',
-        description: 'Automate your BSC project trending status',
+        label: 'Flap.sh Trending',
+        description: 'Place token in Flap.sh trending section for maximum BSC community exposure.',
         tiers: [
-          { id: 'basic', label: 'Trend Push', desc: 'Push to trending section', price: 0.5, currency: 'BNB' },
-          { id: 'premium', label: 'Top Trend', desc: 'Top trending placement', price: 1.0, currency: 'BNB' },
+          { id: 'basic', label: 'Trend Push', priceAmount: 0.5, delivery: '20 min', includes: ['4-6 hours trending'] },
+          { id: 'premium', label: 'Top Trend', priceAmount: 1.0, delivery: '20 min', includes: ['Top placement', '8-12 hours'] },
         ],
       },
       volume: {
-        label: '📈 Flap.sh Volume',
-        description: 'Automate your BSC project volume and trending status',
+        label: 'Flap.sh Volume',
+        description: 'Automate Flap.sh volume to signal activity. Distributed BNB wallets with randomized trades.',
         tiers: [
-          { id: 'basic', label: 'Basic Volume', desc: 'Light volume boost', price: 0.3, currency: 'BNB' },
-          { id: 'medium', label: 'Medium Volume', desc: 'Moderate volume boost', price: 0.6, currency: 'BNB' },
-          { id: 'heavy', label: 'Heavy Volume', desc: 'Maximum volume boost', price: 1.0, currency: 'BNB' },
+          { id: 'basic', label: 'Basic Volume', priceAmount: 0.3, delivery: '30 min', includes: ['Baseline activity'] },
+          { id: 'medium', label: 'Medium Volume', priceAmount: 0.6, delivery: '30 min', includes: ['Healthy activity'] },
+          { id: 'heavy', label: 'Heavy Volume', priceAmount: 1.0, delivery: '30 min', includes: ['Max activity'] },
         ],
       },
     },
@@ -184,12 +188,20 @@ const DEXSCREENER_CHAINS = [
   'Cronos', 'Kava', 'TRON', 'TON', 'SUI',
 ];
 
-// ─────────────────────────────────────────────
-//  BOT INIT
-// ─────────────────────────────────────────────
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+const CRYPTO_INFO = {
+  ETH: { label: 'Ethereum (ETH)', wallet: WALLETS.ETH, network: 'Ethereum Mainnet', rate: 3000 },
+  BNB: { label: 'BNB (BNB)', wallet: WALLETS.BNB, network: 'BNB Smart Chain', rate: 600 },
+  SOL: { label: 'Solana (SOL)', wallet: WALLETS.SOL, network: 'Solana Mainnet', rate: 150 },
+};
 
-// Session store: chatId → session object
+function usdToCrypto(usd, symbol) {
+  const rate = CRYPTO_INFO[symbol]?.rate || 1;
+  const amount = usd / rate;
+  if (symbol === 'ETH' || symbol === 'BNB') return amount.toFixed(4);
+  return amount.toFixed(3);
+}
+
+const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const sessions = {};
 
 function getSession(chatId) {
@@ -198,15 +210,12 @@ function getSession(chatId) {
 }
 
 function clearSession(chatId) {
-  sessions[chatId] = {};
+  delete sessions[chatId];
 }
 
-// ─────────────────────────────────────────────
-//  TOKEN LOOKUP
-// ─────────────────────────────────────────────
 async function fetchTokenInfo(address) {
   try {
-    const res = await axios.get(`https://api.dexscreener.com/latest/dex/tokens/${address}`, { timeout: 8000 });
+    const res = await axios.get(`https://api.dexscreener.com/latest/dex/tokens/${address}`, { timeout: 10000 });
     const pairs = res.data?.pairs;
     if (!pairs || pairs.length === 0) return null;
     const pair = pairs[0];
@@ -216,34 +225,28 @@ async function fetchTokenInfo(address) {
       address: pair.baseToken?.address || address,
       chain: pair.chainId || 'unknown',
       price: pair.priceUsd || '0',
-      marketCap: pair.marketCap ? `$${Number(pair.marketCap).toLocaleString()}` : 'N/A',
-      liquidity: pair.liquidity?.usd ? `$${Number(pair.liquidity.usd).toLocaleString()}` : 'N/A',
-      volume24h: pair.volume?.h24 ? `$${Number(pair.volume.h24).toLocaleString()}` : 'N/A',
+      marketCap: pair.marketCap ? '$' + Number(pair.marketCap).toLocaleString() : 'N/A',
+      liquidity: pair.liquidity?.usd ? '$' + Number(pair.liquidity.usd).toLocaleString() : 'N/A',
+      volume24h: pair.volume?.h24 ? '$' + Number(pair.volume.h24).toLocaleString() : 'N/A',
       priceChange24h: pair.priceChange?.h24 || '0',
-      dexUrl: pair.url || null,
       imageUrl: pair.info?.imageUrl || null,
-      platform: pair.dexId || 'dexscreener',
     };
   } catch (e) {
     return null;
   }
 }
 
-// ─────────────────────────────────────────────
-//  KEYBOARDS
-// ─────────────────────────────────────────────
-const MAIN_MENU_KB = {
+const MAIN_KB = {
   keyboard: [
     [{ text: 'DexScreener' }, { text: 'Pump.fun' }],
     [{ text: 'Four.Meme' }, { text: 'Flap.sh' }],
-    [{ text: 'ℹ️ About' }, { text: '🛟 Support' }],
+    [{ text: 'About' }, { text: 'Support' }],
   ],
   resize_keyboard: true,
-  persistent: true,
 };
 
-function platformServicesKb(platform) {
-  const svc = SERVICES[platform];
+function serviceKB(platformKey) {
+  const svc = SERVICES[platformKey];
   const keys = Object.keys(svc.services);
   const rows = [];
   for (let i = 0; i < keys.length; i += 2) {
@@ -251,113 +254,44 @@ function platformServicesKb(platform) {
     if (keys[i + 1]) row.push({ text: svc.services[keys[i + 1]].label });
     rows.push(row);
   }
-  rows.push([{ text: '⬅️ Back to Main Menu' }]);
+  rows.push([{ text: 'Back to Main' }]);
   return { keyboard: rows, resize_keyboard: true };
 }
 
-function tiersKb(tiers, backText) {
-  const rows = tiers.map(t => [{ text: `${t.label} (${t.price.toFixed(4)} ${t.currency})` }]);
-  rows.push([{ text: '⬅️ Back' }]);
+function tierKB(tiers, isPriceInUSD = false) {
+  const rows = tiers.map(t => {
+    const price = isPriceInUSD ? `$${t.priceUSD}` : `${t.priceAmount}`;
+    return [{ text: `${t.label} (${price})` }];
+  });
+  rows.push([{ text: 'Back' }]);
   return { keyboard: rows, resize_keyboard: true };
 }
 
-function chainsKb() {
+function chainKB() {
   const rows = [];
   for (let i = 0; i < DEXSCREENER_CHAINS.length; i += 2) {
     const row = [{ text: DEXSCREENER_CHAINS[i] }];
     if (DEXSCREENER_CHAINS[i + 1]) row.push({ text: DEXSCREENER_CHAINS[i + 1] });
     rows.push(row);
   }
-  rows.push([{ text: '⬅️ Back to Main Menu' }]);
+  rows.push([{ text: 'Back to Main' }]);
   return { keyboard: rows, resize_keyboard: true };
 }
 
-function confirmKb() {
-  return {
-    keyboard: [
-      [{ text: '✅ Confirm Token' }],
-      [{ text: '🔄 Enter Different Address' }],
-      [{ text: '⬅️ Back to Tiers' }, { text: '❌ Cancel' }],
-    ],
-    resize_keyboard: true,
-  };
+function payChainKB(chains) {
+  const rows = chains.map(c => [{ text: CRYPTO_INFO[c].label }]);
+  rows.push([{ text: 'Back' }]);
+  return { keyboard: rows, resize_keyboard: true };
 }
 
-function paymentKb() {
-  return {
-    keyboard: [
-      [{ text: '✅ I\'ve Sent Payment' }],
-      [{ text: '❌ Cancel Order' }],
-    ],
-    resize_keyboard: true,
-  };
-}
-
-// ─────────────────────────────────────────────
-//  MESSAGES
-// ─────────────────────────────────────────────
-function welcomeMsg() {
-  return `👋 *Welcome to the Multi-Platform Token Booster Bot!*
-
-Ready to send your token to the moon? 🚀
-We provide industry-leading automated volume, holders, and Trending services across the top crypto platforms with unmatched reliability and speed.
-
-⚠️ *IMPORTANT NOTICE:*
-We are an independent service that connects directly to platform APIs to ensure your project's data remains accurate and top-performing at all times.
-
-✨ *Why Choose Us?*
-• *Trusted by Professionals:* Verified provider for top-tier crypto projects.
-• *Direct API Integration:* Official channels — 100% safety and performance.
-• *24/7 Premium Support:* Our team is always ready to help you scale.
-
-📊 *Our Supported Platforms:*
-🖥 *DexScreener* — Maximize visibility with trending status and high-speed volume bots.
-🔥 *Pump.fun* — Supercharge your Solana launches with tailored volume & holders.
-🐸 *Four.Meme* — Dominate the BSC meme coin charts like a pro.
-⚡ *Flap.sh* — Automate your BSC project volume and trending status.
-
-👇 *Select a platform below to get started!*`;
-}
-
-function aboutMsg() {
-  return `ℹ️ *About Dex Boosting Bot*
-
-We are a premium multi-platform token boosting service trusted by hundreds of crypto projects worldwide.
-
-🔐 *Security First*
-All payments are verified on-chain. We never ask for private keys or seed phrases.
-
-⚡ *Fast Delivery*
-Most orders begin within 5-15 minutes of payment confirmation.
-
-📞 *Support*
-Available 24/7 — use the Support button to reach our team.
-
-_Version 1.0 | Multi-Platform Edition_`;
-}
-
-function supportMsg() {
-  return `🛟 *Support*
-
-Need help? Our team is available 24/7.
-
-📬 Contact: @Dave_211
-💬 Response time: Usually within 15 minutes
-
-_Please include your order details and transaction hash when reaching out._`;
-}
-
-// ─────────────────────────────────────────────
-//  PLATFORM KEY FROM LABEL
-// ─────────────────────────────────────────────
-const PLATFORM_TEXT_MAP = {
+const PLATFORM_MAP = {
   'DexScreener': 'dexscreener',
   'Pump.fun': 'pumpfun',
   'Four.Meme': 'fourmeme',
   'Flap.sh': 'flapsh',
 };
 
-function findPlatformByServiceLabel(label) {
+function findServiceByLabel(label) {
   for (const [pk, pv] of Object.entries(SERVICES)) {
     for (const [sk, sv] of Object.entries(pv.services)) {
       if (sv.label === label) return { platformKey: pk, serviceKey: sk };
@@ -366,339 +300,271 @@ function findPlatformByServiceLabel(label) {
   return null;
 }
 
-function findTierByLabel(tiers, text) {
-  return tiers.find(t => text.startsWith(t.label));
+function findTierByText(tiers, text) {
+  return tiers.find(t => text.includes(t.label));
 }
 
-// ─────────────────────────────────────────────
-//  WALLET PER CURRENCY
-// ─────────────────────────────────────────────
-function getWallet(currency) {
-  if (currency === 'SOL') return WALLETS.SOL;
-  if (currency === 'BNB') return WALLETS.BNB;
-  return WALLETS.ETH;
+function findPayChain(text) {
+  for (const [symbol, info] of Object.entries(CRYPTO_INFO)) {
+    if (info.label === text) return symbol;
+  }
+  return null;
 }
 
-// ─────────────────────────────────────────────
-//  SEND ORDER ALERT TO ADMIN
-// ─────────────────────────────────────────────
-async function notifyAdmin(order) {
+async function notifyAdmin(data) {
   if (!ADMIN_ID) return;
-  const msg = `🔔 *NEW ORDER*\n\nPlatform: ${order.platform}\nService: ${order.service}\nTier: ${order.tier}\nToken: ${order.tokenName} (${order.tokenSymbol})\nCA: \`${order.tokenAddress}\`\nAmount: ${order.price} ${order.currency}\nUser: @${order.username || 'unknown'} (${order.userId})`;
-  await bot.sendMessage(ADMIN_ID, msg, { parse_mode: 'Markdown' });
+  const msg = `NEW ORDER:\nPlatform: ${data.platform}\nService: ${data.service}\nTier: ${data.tier}\nToken: ${data.tokenName}\nCA: ${data.ca}\nAmount: ${data.amount} ${data.symbol}\nUser: @${data.username || 'unknown'}`;
+  try {
+    await bot.sendMessage(ADMIN_ID, msg);
+  } catch (e) {
+    console.error('Admin notify failed:', e.message);
+  }
 }
 
-// ─────────────────────────────────────────────
-//  MAIN HANDLER
-// ─────────────────────────────────────────────
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text?.trim() || '';
   const session = getSession(chatId);
 
-  // ── /start ──────────────────────────────────
-  if (text === '/start' || text === '/menu') {
-    clearSession(chatId);
-    await bot.sendMessage(chatId, welcomeMsg(), {
-      parse_mode: 'Markdown',
-      reply_markup: MAIN_MENU_KB,
-    });
-    return;
-  }
-
-  // ── About / Support ─────────────────────────
-  if (text === 'ℹ️ About') {
-    await bot.sendMessage(chatId, aboutMsg(), { parse_mode: 'Markdown', reply_markup: MAIN_MENU_KB });
-    return;
-  }
-  if (text === '🛟 Support') {
-    await bot.sendMessage(chatId, supportMsg(), { parse_mode: 'Markdown', reply_markup: MAIN_MENU_KB });
-    return;
-  }
-
-  // ── Main Menu ────────────────────────────────
-  if (text === '⬅️ Back to Main Menu') {
-    clearSession(chatId);
-    await bot.sendMessage(chatId, '👇 *Select a platform to get started!*', {
-      parse_mode: 'Markdown',
-      reply_markup: MAIN_MENU_KB,
-    });
-    return;
-  }
-
-  // ── Platform Selection ───────────────────────
-  if (PLATFORM_TEXT_MAP[text]) {
-    const platformKey = PLATFORM_TEXT_MAP[text];
-    session.platform = platformKey;
-    session.step = 'service';
-    const pv = SERVICES[platformKey];
-    await bot.sendMessage(chatId,
-      `${pv.label} *Services*\n\nPlease select a service:`,
-      { parse_mode: 'Markdown', reply_markup: platformServicesKb(platformKey) }
-    );
-    return;
-  }
-
-  // ── Service Selection ────────────────────────
-  if (session.step === 'service') {
-    const found = findPlatformByServiceLabel(text);
-    if (found) {
-      session.platform = found.platformKey;
-      session.service = found.serviceKey;
-      const svc = SERVICES[found.platformKey].services[found.serviceKey];
-      session.step = svc.requiresChain ? 'select_chain' : 'select_tier';
-
-      if (svc.requiresChain) {
-        await bot.sendMessage(chatId,
-          `*${svc.label} Selected*\n\n${svc.description}\n\nPlease select the blockchain where your token is deployed:`,
-          { parse_mode: 'Markdown', reply_markup: chainsKb() }
-        );
-      } else {
-        const tiersText = svc.tiers.map((t, i) =>
-          `${i + 1}. *${t.label}* — ${t.desc}\n   Price: ${t.price.toFixed(4)} ${t.currency}`
-        ).join('\n\n');
-        await bot.sendMessage(chatId,
-          `*${svc.label} Selected*\n\n${svc.description}\n\nPlatform: ${SERVICES[found.platformKey].label} (${SERVICES[found.platformKey].chain})\n\n*Select Tier:*\n\n${tiersText}`,
-          { parse_mode: 'Markdown', reply_markup: tiersKb(svc.tiers) }
-        );
-      }
-      return;
-    }
-  }
-
-  // ── Chain Selection (DexScreener) ───────────
-  if (session.step === 'select_chain') {
-    if (DEXSCREENER_CHAINS.includes(text)) {
-      session.chain = text;
-      session.step = 'select_tier';
-      const svc = SERVICES[session.platform].services[session.service];
-      const tiersText = svc.tiers.map((t, i) =>
-        `${i + 1}. *${t.label}* — ${t.desc}\n   Price: ${t.price.toFixed(4)} ${t.currency}`
-      ).join('\n\n');
+  try {
+    if (text === '/start') {
+      clearSession(chatId);
       await bot.sendMessage(chatId,
-        `Chain: *${text}* selected ✅\n\n*Select Tier:*\n\n${tiersText}`,
-        { parse_mode: 'Markdown', reply_markup: tiersKb(svc.tiers) }
+        'Welcome to Dex Boosting Bot!\n\nWe provide volume, trending, and holder boosts across DexScreener, Pump.fun, Four.Meme, and Flap.sh.\n\nDexScreener: All prices in USD, pay in ETH/BNB/SOL\nOthers: Prices in native currency (SOL, BNB)\n\nSelect a platform:',
+        { reply_markup: MAIN_KB }
       );
       return;
     }
-  }
 
-  // ── Tier Selection ───────────────────────────
-  if (session.step === 'select_tier') {
-    const svc = SERVICES[session.platform]?.services[session.service];
-    if (svc) {
-      const tier = findTierByLabel(svc.tiers, text);
-      if (tier) {
-        session.tier = tier;
-        session.step = 'awaiting_ca';
-        await bot.sendMessage(chatId,
-          `✅ *${tier.label}* selected!\n\nNow please send the *Contract Address (CA)* of your token:`,
-          { parse_mode: 'Markdown', reply_markup: { keyboard: [[{ text: '⬅️ Back' }]], resize_keyboard: true } }
-        );
+    if (text === 'About') {
+      await bot.sendMessage(chatId,
+        'Dex Boosting Bot - Professional Token Boosting Service\n\nSupports:\n- DexScreener (Multi-chain)\n- Pump.fun (Solana)\n- Four.Meme (BSC)\n- Flap.sh (BSC)\n\nPricing: Transparent USD (DexScreener) or native currency.\n\nSupport: @Dave_211',
+        { reply_markup: MAIN_KB }
+      );
+      return;
+    }
+
+    if (text === 'Support') {
+      await bot.sendMessage(chatId,
+        'Support available 24/7\n\nContact: @Dave_211\nResponse time: 15 minutes',
+        { reply_markup: MAIN_KB }
+      );
+      return;
+    }
+
+    if (text === 'Back to Main') {
+      clearSession(chatId);
+      await bot.sendMessage(chatId, 'Select a platform:', { reply_markup: MAIN_KB });
+      return;
+    }
+
+    if (PLATFORM_MAP[text]) {
+      session.platform = PLATFORM_MAP[text];
+      session.step = 'service';
+      const pv = SERVICES[session.platform];
+      await bot.sendMessage(chatId, `${pv.emoji} ${pv.label} Services:`, { reply_markup: serviceKB(session.platform) });
+      return;
+    }
+
+    if (session.step === 'service') {
+      const found = findServiceByLabel(text);
+      if (found) {
+        session.platform = found.platformKey;
+        session.service = found.serviceKey;
+        const sv = SERVICES[found.platformKey].services[found.serviceKey];
+        const isPriceInUSD = SERVICES[found.platformKey].usdPriced;
+
+        if (sv.requiresChain) {
+          session.step = 'chain';
+          await bot.sendMessage(chatId, `${sv.label}\n\n${sv.description}\n\nSelect blockchain:`, { reply_markup: chainKB() });
+        } else {
+          session.step = 'tier';
+          const tierList = sv.tiers.map((t, i) => {
+            const price = isPriceInUSD ? `$${t.priceUSD}` : `${t.priceAmount} ${SERVICES[found.platformKey].nativeCurrency}`;
+            return `${i + 1}. ${t.label} (${price}) - ${t.delivery}`;
+          }).join('\n');
+          await bot.sendMessage(chatId, `${sv.label}\n\n${sv.description}\n\nTiers:\n${tierList}`, { reply_markup: tierKB(sv.tiers, isPriceInUSD) });
+        }
         return;
       }
     }
-  }
 
-  // ── Back from Tier / CA ──────────────────────
-  if (text === '⬅️ Back') {
-    if (session.step === 'awaiting_ca' || session.step === 'select_tier') {
-      session.step = 'service';
-      const pv = SERVICES[session.platform];
-      await bot.sendMessage(chatId,
-        `${pv.label} *Services*\n\nPlease select a service:`,
-        { parse_mode: 'Markdown', reply_markup: platformServicesKb(session.platform) }
-      );
-    } else {
-      clearSession(chatId);
-      await bot.sendMessage(chatId, '👇 *Select a platform to get started!*', {
-        parse_mode: 'Markdown',
-        reply_markup: MAIN_MENU_KB,
-      });
-    }
-    return;
-  }
-
-  // ── CA Input ─────────────────────────────────
-  if (session.step === 'awaiting_ca') {
-    await bot.sendMessage(chatId, '🔍 _Looking up your token..._', { parse_mode: 'Markdown' });
-    const tokenInfo = await fetchTokenInfo(text);
-    if (tokenInfo) {
-      session.tokenInfo = tokenInfo;
-      session.step = 'confirm_token';
-
-      const infoText =
-        `*Token Information:*\n\n` +
-        `Name: ${tokenInfo.name}\n` +
-        `Symbol: $${tokenInfo.symbol}\n` +
-        `Address: \`${tokenInfo.address}\`\n` +
-        `Market Cap: ${tokenInfo.marketCap}\n` +
-        `Platform: ${tokenInfo.platform}\n` +
-        `Price: $${Number(tokenInfo.price).toFixed(8)}\n` +
-        `24h Volume: ${tokenInfo.volume24h}\n` +
-        `Liquidity: ${tokenInfo.liquidity}`;
-
-      if (tokenInfo.imageUrl) {
-        try {
-          await bot.sendPhoto(chatId, tokenInfo.imageUrl, {
-            caption: infoText + '\n\n*Is this the correct token you want to boost? Please confirm:*',
-            parse_mode: 'Markdown',
-            reply_markup: confirmKb(),
-          });
-        } catch {
-          await bot.sendMessage(chatId, infoText + '\n\n*Is this the correct token you want to boost? Please confirm:*', {
-            parse_mode: 'Markdown',
-            reply_markup: confirmKb(),
-          });
-        }
-      } else {
-        await bot.sendMessage(chatId, infoText + '\n\n*Is this the correct token you want to boost? Please confirm:*', {
-          parse_mode: 'Markdown',
-          reply_markup: confirmKb(),
-        });
+    if (session.step === 'chain') {
+      if (DEXSCREENER_CHAINS.includes(text)) {
+        session.chain = text;
+        session.step = 'tier';
+        const sv = SERVICES[session.platform].services[session.service];
+        const isPriceInUSD = SERVICES[session.platform].usdPriced;
+        const tierList = sv.tiers.map((t, i) => {
+          const price = isPriceInUSD ? `$${t.priceUSD}` : `${t.priceAmount}`;
+          return `${i + 1}. ${t.label} (${price})`;
+        }).join('\n');
+        await bot.sendMessage(chatId, `Chain: ${text} selected\n\n${tierList}`, { reply_markup: tierKB(sv.tiers, isPriceInUSD) });
+        return;
       }
-    } else {
+    }
+
+    if (session.step === 'tier') {
+      const sv = SERVICES[session.platform].services[session.service];
+      const tier = findTierByText(sv.tiers, text);
+      if (tier) {
+        session.tier = tier;
+        const platformData = SERVICES[session.platform];
+
+        if (platformData.payChains.length > 1) {
+          session.step = 'paychain';
+          await bot.sendMessage(chatId, `${tier.label} selected\n\nChoose payment method:`, { reply_markup: payChainKB(platformData.payChains) });
+        } else {
+          session.payChain = platformData.payChains[0];
+          session.step = 'ca';
+          await bot.sendMessage(chatId, `${tier.label} selected\n\nSend your token Contract Address:`, { reply_markup: { remove_keyboard: true } });
+        }
+        return;
+      }
+    }
+
+    if (session.step === 'paychain') {
+      const chainSymbol = findPayChain(text);
+      if (chainSymbol) {
+        session.payChain = chainSymbol;
+        session.step = 'ca';
+        await bot.sendMessage(chatId, `Payment: ${text}\n\nSend your token Contract Address:`, { reply_markup: { remove_keyboard: true } });
+        return;
+      }
+    }
+
+    if (session.step === 'ca') {
+      await bot.sendMessage(chatId, 'Looking up token...');
+      const tokenInfo = await fetchTokenInfo(text);
+
+      if (tokenInfo) {
+        session.tokenInfo = tokenInfo;
+        session.step = 'confirm';
+
+        let msg = `Token Found:\nName: ${tokenInfo.name}\nSymbol: ${tokenInfo.symbol}\nChain: ${tokenInfo.chain}\nPrice: $${Number(tokenInfo.price).toFixed(8)}\nMarket Cap: ${tokenInfo.marketCap}\n\nCorrect token?`;
+
+        if (tokenInfo.imageUrl) {
+          try {
+            await bot.sendPhoto(chatId, tokenInfo.imageUrl, { caption: msg });
+          } catch {
+            await bot.sendMessage(chatId, msg);
+          }
+        } else {
+          await bot.sendMessage(chatId, msg);
+        }
+
+        await bot.sendMessage(chatId, 'Confirm or enter different CA:', {
+          reply_markup: { keyboard: [
+            [{ text: 'Confirm' }],
+            [{ text: 'Different Address' }],
+            [{ text: 'Back' }],
+          ], resize_keyboard: true },
+        });
+      } else {
+        await bot.sendMessage(chatId, 'Token not found. Check the address and try again.');
+      }
+      return;
+    }
+
+    if (session.step === 'confirm') {
+      if (text === 'Confirm') {
+        session.step = 'payment';
+        const platformData = SERVICES[session.platform];
+        const tier = session.tier;
+        const chainInfo = CRYPTO_INFO[session.payChain];
+
+        let amount, amountStr;
+        if (platformData.usdPriced) {
+          amount = usdToCrypto(tier.priceUSD, session.payChain);
+          amountStr = `$${tier.priceUSD} USD (${amount} ${session.payChain})`;
+        } else {
+          amount = tier.priceAmount;
+          amountStr = `${amount} ${session.payChain}`;
+        }
+
+        const msg = `Order Summary:\nPlatform: ${platformData.label}\nService: ${SERVICES[session.platform].services[session.service].label}\nTier: ${tier.label}\nToken: ${session.tokenInfo.name}\n\nAmount: ${amountStr}\nNetwork: ${chainInfo.network}\nSend to: ${chainInfo.wallet}\n\nAfter sending, reply with your TxHash`;
+
+        await bot.sendMessage(chatId, msg, {
+          reply_markup: { keyboard: [
+            [{ text: 'Payment Sent' }],
+            [{ text: 'Cancel' }],
+          ], resize_keyboard: true },
+        });
+
+        await notifyAdmin({
+          platform: platformData.label,
+          service: SERVICES[session.platform].services[session.service].label,
+          tier: tier.label,
+          tokenName: session.tokenInfo.name,
+          ca: session.tokenInfo.address,
+          amount: platformData.usdPriced ? `$${tier.priceUSD} USD (~${amount})` : amount,
+          symbol: session.payChain,
+          username: msg.from?.username,
+        });
+        return;
+      }
+
+      if (text === 'Different Address') {
+        session.step = 'ca';
+        await bot.sendMessage(chatId, 'Send new Contract Address:');
+        return;
+      }
+
+      if (text === 'Back') {
+        session.step = 'tier';
+        const sv = SERVICES[session.platform].services[session.service];
+        const isPriceInUSD = SERVICES[session.platform].usdPriced;
+        await bot.sendMessage(chatId, 'Select tier:', { reply_markup: tierKB(sv.tiers, isPriceInUSD) });
+        return;
+      }
+    }
+
+    if (session.step === 'payment') {
+      if (text === 'Payment Sent') {
+        session.step = 'txhash';
+        await bot.sendMessage(chatId, 'Send your transaction hash (TxHash):');
+        return;
+      }
+
+      if (text === 'Cancel') {
+        clearSession(chatId);
+        await bot.sendMessage(chatId, 'Order cancelled.', { reply_markup: MAIN_KB });
+        return;
+      }
+    }
+
+    if (session.step === 'txhash') {
+      const platformData = SERVICES[session.platform];
+      const tier = session.tier;
+      const chainInfo = CRYPTO_INFO[session.payChain];
+      let amountDisplay;
+      if (platformData.usdPriced) {
+        const crypto = usdToCrypto(tier.priceUSD, session.payChain);
+        amountDisplay = `$${tier.priceUSD} USD (~${crypto} ${session.payChain})`;
+      } else {
+        amountDisplay = `${tier.priceAmount} ${session.payChain}`;
+      }
+
       await bot.sendMessage(chatId,
-        `❌ *Token not found.*\n\nCould not find token for that address. Please check the CA and try again, or make sure the token is listed on DexScreener.`,
-        { parse_mode: 'Markdown' }
+        `Payment Received!\n\nOrder Details:\nToken: ${session.tokenInfo.name}\nTier: ${tier.label}\nAmount: ${amountDisplay}\nTxHash: ${text}\n\nYour order will begin within ${tier.delivery}.\n\nThank you!`,
+        { reply_markup: MAIN_KB }
       );
-    }
-    return;
-  }
 
-  // ── Token Confirmation ───────────────────────
-  if (session.step === 'confirm_token') {
-    if (text === '✅ Confirm Token') {
-      session.step = 'payment';
-      const { tier, tokenInfo, platform, service } = session;
-      const wallet = getWallet(tier.currency);
-      const pv = SERVICES[platform];
+      if (ADMIN_ID) {
+        await bot.sendMessage(ADMIN_ID, `PAYMENT CONFIRMED\nToken: ${session.tokenInfo.name}\nTxHash: ${text}\nAmount: ${amountDisplay}`);
+      }
 
-      const orderMsg =
-        `📋 *Order Summary*\n\n` +
-        `Platform: ${pv.label}\n` +
-        `Service: ${pv.services[service].label}\n` +
-        `Tier: ${tier.label}\n` +
-        `Token: ${tokenInfo.name} ($${tokenInfo.symbol})\n\n` +
-        `💰 *Payment Details*\n\n` +
-        `Amount: *${tier.price.toFixed(4)} ${tier.currency}*\n` +
-        `Send to:\n\`${wallet}\`\n\n` +
-        `⚠️ Send *exactly* ${tier.price.toFixed(4)} ${tier.currency} to the address above.\n` +
-        `After sending, click ✅ I've Sent Payment and provide your transaction hash.`;
-
-      await bot.sendMessage(chatId, orderMsg, {
-        parse_mode: 'Markdown',
-        reply_markup: paymentKb(),
-      });
-
-      // Notify admin of pending order
-      await notifyAdmin({
-        platform: pv.label,
-        service: pv.services[service].label,
-        tier: tier.label,
-        tokenName: tokenInfo.name,
-        tokenSymbol: tokenInfo.symbol,
-        tokenAddress: tokenInfo.address,
-        price: tier.price.toFixed(4),
-        currency: tier.currency,
-        username: msg.from?.username,
-        userId: msg.from?.id,
-      });
-
-      return;
-    }
-
-    if (text === '🔄 Enter Different Address') {
-      session.step = 'awaiting_ca';
-      await bot.sendMessage(chatId, 'Please send the new Contract Address (CA):', {
-        reply_markup: { keyboard: [[{ text: '⬅️ Back' }]], resize_keyboard: true },
-      });
-      return;
-    }
-
-    if (text === '⬅️ Back to Tiers') {
-      session.step = 'select_tier';
-      const svc = SERVICES[session.platform].services[session.service];
-      const tiersText = svc.tiers.map((t, i) =>
-        `${i + 1}. *${t.label}* — ${t.desc}\n   Price: ${t.price.toFixed(4)} ${t.currency}`
-      ).join('\n\n');
-      await bot.sendMessage(chatId,
-        `*Select Tier:*\n\n${tiersText}`,
-        { parse_mode: 'Markdown', reply_markup: tiersKb(svc.tiers) }
-      );
-      return;
-    }
-
-    if (text === '❌ Cancel') {
       clearSession(chatId);
-      await bot.sendMessage(chatId, '❌ Order cancelled. Select a platform to start again.', {
-        reply_markup: MAIN_MENU_KB,
-      });
-      return;
-    }
-  }
-
-  // ── Payment Confirmation ─────────────────────
-  if (session.step === 'payment') {
-    if (text === '✅ I\'ve Sent Payment') {
-      session.step = 'awaiting_txhash';
-      await bot.sendMessage(chatId,
-        '📨 Please send your *transaction hash (TxHash)* so we can verify your payment:',
-        { parse_mode: 'Markdown', reply_markup: { remove_keyboard: true } }
-      );
       return;
     }
 
-    if (text === '❌ Cancel Order') {
-      clearSession(chatId);
-      await bot.sendMessage(chatId, '❌ Order cancelled.', { reply_markup: MAIN_MENU_KB });
-      return;
-    }
-  }
-
-  // ── TxHash Input ─────────────────────────────
-  if (session.step === 'awaiting_txhash') {
-    const txHash = text;
-    session.txHash = txHash;
-    session.step = 'done';
-
-    const { tier, tokenInfo, platform, service } = session;
-    const pv = SERVICES[platform];
-
-    const confirmMsg =
-      `✅ *Payment Submitted!*\n\n` +
-      `Thank you! Your order has been received.\n\n` +
-      `📋 *Order Details:*\n` +
-      `Platform: ${pv.label}\n` +
-      `Service: ${pv.services[service].label}\n` +
-      `Tier: ${tier.label}\n` +
-      `Token: ${tokenInfo.name} ($${tokenInfo.symbol})\n` +
-      `Amount: ${tier.price.toFixed(4)} ${tier.currency}\n\n` +
-      `🔗 TxHash: \`${txHash}\`\n\n` +
-      `⏱ Your order will begin within *5-15 minutes* after payment confirmation.\n\n` +
-      `Need help? Use the Support button.`;
-
-    await bot.sendMessage(chatId, confirmMsg, {
-      parse_mode: 'Markdown',
-      reply_markup: MAIN_MENU_KB,
-    });
-
-    // Notify admin of txhash
-    if (ADMIN_ID) {
-      await bot.sendMessage(ADMIN_ID,
-        `💸 *PAYMENT SUBMITTED*\n\nToken: ${tokenInfo.name} ($${tokenInfo.symbol})\nCA: \`${tokenInfo.address}\`\nPlatform: ${pv.label} | Tier: ${tier.label}\nAmount: ${tier.price.toFixed(4)} ${tier.currency}\nTxHash: \`${txHash}\`\nUser: @${msg.from?.username || 'unknown'} (${msg.from?.id})`,
-        { parse_mode: 'Markdown' }
-      );
-    }
-    return;
-  }
-
-  // ── Fallback ─────────────────────────────────
-  if (!session.step) {
-    await bot.sendMessage(chatId, '👇 Use the menu below to get started!', {
-      reply_markup: MAIN_MENU_KB,
-    });
+  } catch (err) {
+    console.error('Error:', err.message);
+    await bot.sendMessage(chatId, 'Something went wrong. Type /start to begin again.', { reply_markup: MAIN_KB });
   }
 });
+
+bot.on('polling_error', (err) => console.error('Polling error:', err.code));
+bot.on('error', (err) => console.error('Bot error:', err.message));
 
 console.log('🚀 Dex Boosting Bot is running...');
